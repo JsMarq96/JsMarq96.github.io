@@ -1,52 +1,198 @@
-<!DOCTYPE html>
 <html>
-	<head>
-        <!---<script type="text/javascript" src="https://spectorcdn.babylonjs.com/spector.bundle.js"></script>
- -->    </head>
-	<body>
-        <style>
-            #canvas {
-                width: 100%;
-                height: 100%;
-            }
 
-            .emscripten_border {
-                width: 100%;
-                height: 100%;
-            }
-        </style>
+  <style type="text/css" media="screen">
+    body {
+        margin: 0px;
+        border-width: 2px;
+    }
+    #wrapper {
+        background-color: rgb(22,23,25);
+        width: 100%;
+        height: 100%;
+        display: flex;
+        margin: 0px;
+    }
 
-        <!-- <script src="https://cdn.jsdelivr.net/gh/brendan-duncan/webgpu_recorder/webgpu_recorder.js"></script>
-          -->
-        <div class="emscripten_border">
-            <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    #wrapper > div {
+        background-color: rgb(22,23,25);
+        border-color: white;
+        //margin: 20px;
+        border-style: solid;
+    }
+    
+    #desktop-area {
+        width: 100%;
+        height: 100%;
+        float: left;
+        border-color: white;
+        position: relative;
+    }
+
+   
+    #screensaver-canvas {
+        width: 100%;
+        height: 100%;
+        top: 0px;
+        left: 0px;
+    }
+    
+    .dragable_windows {
+        width: 300px;
+        height: 400px;
+        border-style:solid;
+        border-color: black;
+        background-color: white;
+        position: absolute;
+        top: 0px;
+        left:0px;
+        box-shadow: 10px 10px;
+    }
+
+    .window_title {
+        width: 100%;
+        height: 50px;
+        border-bottom-style: solid;
+        border-color: black;
+    }
+    .window_body {
+        width: 100%;
+        height: calc(100% - 50px);
+        bottom: 0px;
+        position:absolute;
+    }
+
+     .window_body canvas {
+         display: block;
+         width: 100%;
+         height: 340px;
+         bottom: 0px;
+         position:absolute;
+     }
+
+     #steve {
+         width: 300px;
+         height: 400px;
+     }
+
+     
+    #visualization {
+        top: 20px;
+        left: 120px;
+        width: 1000px;
+        height: 700px;
+    }
+
+    #block-overlay {
+        width: 60%;
+        height: 100%;
+        z-index: 5;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+    
+    #block-canvas {
+        width: 60%;
+        height: 100%;
+        z-index: 2;
+    }
+
+    #block_visualization {
+        width: 100%;
+        height: 100%;
+    }
+
+    #visualization_light {
+        width: 70px;
+        position: absolute;
+    }
+
+    #block-selector {
+        position: absolute;
+        width: 30%;
+        right:0px;
+        height: 100%;
+        border-style: solid;
+        border-color: black;
+    }
+
+
+
+    #taskbar {
+        background-color: black;
+        width:95%;
+        height: 35px;
+        left: 2.5%;
+        bottom: 10px;
+        position:absolute;
+    }
+
+    #taskbar #clock {
+        color: white;
+        border-style:solid;
+        border-color: white;
+        width: 120px;
+        height: calc(100% - 8px);
+        right:1px;
+        top: 1px;
+        position: absolute;
+    }
+  </style>
+
+
+  <body>
+    <div id="wrapper">
+      <div id="desktop-area">
+        <div id="steve" class="dragable_windows">
+            <div class="window_title" ></div>
+            <div class="window_body">
+                <canvas id="steve-canvas"/>
+            </div>
         </div>
 
-        <!-- <script async type="text/javascript" src="index.js"></script> -->
-        <button onclick="Module['webxr_request_session_func'](1, ['local-floor'], 0)">ENTER VR</button>
-         <script>
-                //var spector = new SPECTOR.Spector();
-                //spector.displayUI();
-                /*new WebGPURecorder({
-                  "frames": 10,
-                  "export": "WebGPURecord",
-                  "width": 400,
-                  "height": 400
-                  });*/
-                const canvas = document.querySelector("canvas");
+        <div id="visualization" class="dragable_windows">
+            <div class="window_title" >
+            </div>
+            <div class="window_body">
+                <canvas id="block-canvas"></canvas>
+                <div id="block-selector">
+                  <div id="select_result" class="selector_area"> Result</div>
+                  <div id="select_normal" class="selector_area">Normal </div>
+                  <div id="select_specular" class="selector_area">Specular </div>
+                </div>
+            </div>
+        </div>
 
-             const resize = () => {
-                 canvas.width = window.innerWidth;
-                 canvas.height = window.innerHeight;
-             };
 
-             resize();
-             window.addEventListener('resize', resize);
-            </script>
+        <canvas id="screensaver-canvas"/>
 
-        <script async type="text/javascript" src="index.js">   </script>
+      </div>
 
-	</body>
+      <div id="taskbar"> <div id="clock"> </div></div>
+    </div>
+<script src="js/webgl-debug.js"></script>
+    <script src="js/third-party/gl-matrix-min.js"></script>
+   <script type="module">
+     // Clock
+     
+     import { makeWindowDragable } from "./js/drag_drop.js";
+     // Window Dragging
+     var windows = document.getElementsByClassName("dragable_windows");
+     
+     for (var i = 0; i < windows.length; i++) {
+       makeWindowDragable(windows[i]);
+     }
+     //var element = document.getElementById("drag-example");
+
+     
+     import { init_webgl_screensaver } from "./js/screensaver.js";
+     import { init_steve_head } from "./js/steve_head.js";
+     import { init_block_renderer } from "./js/block_renderer.js"; // 92.5
+     import { init_clock_animation } from "./js/clock.js";
+     init_clock_animation();
+     init_webgl_screensaver();
+     init_steve_head();
+     init_block_renderer();
+   </script>
+  </body>
 </html>
-
-
