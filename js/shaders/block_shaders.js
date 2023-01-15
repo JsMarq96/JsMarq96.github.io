@@ -18,7 +18,8 @@ let block_vertex =`#version 300 es
     void main() {
 		v_face_normal = normalize(u_model_mat * vec4(a_normal, 0.0)).xyz;
         v_tangent = normalize(u_model_mat * vec4(a_tangent, 0.0)).xyz;
-		vec3 b = normalize(cross(v_tangent, v_face_normal));
+		vec3 b = (cross(v_tangent, v_face_normal));
+		//b = (u_model_mat * vec4(b, 0.0)).xyz;
 		v_TBN = transpose(mat3(v_tangent, b, v_face_normal));
 
 		v_uv = a_uv;
@@ -92,12 +93,7 @@ struct sFragVects {
 	float attenuation;
 };
 
-// Fill Datastructs =============
-
-vec3 perturbNormal( vec3 N, vec3 V, vec2 texcoord, vec3 normal_pixel ) {
-	normal_pixel = normal_pixel * 255./127. - 128./127.;
-	return normalize(v_TBN * normal_pixel);
-}
+// Fill Datastructs ============
 
 sFragVects getVectsOfFragment(const in sFragData mat, const in vec3 light_pos) {
 	sFragVects vects;
@@ -150,8 +146,8 @@ sFragData getDataOfFragment(const in vec2 uv) {
 
 	vec2 normal_uv = uv / u_normal_anim_size;
 	vec4 N = texture( u_normal_tex, get_tiling_uv(uv, u_normal_anim_size));
-	mat.normal = normalize((2.0 * N.rgb) - 1.0);
-	mat.normal = normalize(perturbNormal(normalize(v_face_normal), normalize( - v_world_position), v_uv, N.rgb));
+	//mat.normal = normalize((2.0 * N.rgb) - 1.0);
+	mat.normal = normalize(v_TBN * (N.rgb * vec3(2.0) - vec3(1.0) ));
     mat.height = N.a;
 
 	//mat.emmisive =  de_gamma(texture( u_emmisive_tex, v_uv ).rgb) * u_emmisive_factor;
