@@ -1,30 +1,39 @@
 
 let block_vertex =`#version 300 es
     layout(location = 0)in vec3 a_position;
-	layout(location = 1)in vec3 a_normal;
-	layout(location = 2)in vec3 a_tangent;
-    layout(location = 3)in vec2 a_uv;
+    layout(location = 1)in vec2 a_uv;
+	layout(location = 2)in vec3 a_normal;
+	layout(location = 3)in vec3 a_tangent;
+	layout(location = 4)in vec3 a_binormal;
 
     out vec2 v_uv;
 	out vec3 v_world_position;
+	out vec3 v_tangent_view;
 	out vec3 v_face_normal;
-	out vec3 v_tangent;
 	out mat3 v_TBN;
 
     uniform mat4 u_model_mat;
     uniform mat4 u_vp_mat;
-	uniform vec3 u_face_normal;
+	uniform vec3 u_camera_pos;
 
     void main() {
-		v_face_normal = normalize(u_model_mat * vec4(a_normal, 0.0)).xyz;
-        v_tangent = normalize(u_model_mat * vec4(a_tangent, 0.0)).xyz;
-		vec3 b = (cross(v_tangent, v_face_normal));
-		//b = (u_model_mat * vec4(b, 0.0)).xyz;
-		v_TBN = transpose(mat3(v_tangent, b, v_face_normal));
+    	// Compute the TBN
+		vec3 normal = normalize(u_model_mat * vec4(a_normal, 0.0)).xyz;
+        vec3 tangent = normalize(u_model_mat * vec4(a_tangent, 0.0)).xyz;
+        vec3 binormal = normalize(u_model_mat * vec4(a_binormal, 0.0)).xyz;
+        //tangent = normalize(tangent - (dot(normal, tangent) * normal));
+
+		v_face_normal = normal;
+		
+		v_TBN = (mat3(tangent, binormal, normal));
 
 		v_uv = a_uv;
 		v_world_position = (u_model_mat * vec4(a_position, 1.0)).xyz;
         gl_Position = u_vp_mat * vec4(v_world_position, 1.0);
+
+        vec3 view = normalize(u_camera_pos - v_world_position);
+		mat3 inv_TBN = transpose(v_TBN);
+    	v_tangent_view = inv_TBN * view;
     }`;
 
 
@@ -51,8 +60,8 @@ uniform float u_render_mode;
 in vec3 v_face_normal;
 in vec2 v_uv;
 in vec3 v_world_position;
-in vec3 v_tangent;
 in mat3 v_TBN;
+in vec3 v_tangent_view;
 out vec4 frag_color;
 
 const float PI =  3.14159265359;
@@ -93,7 +102,29 @@ struct sFragVects {
 	float attenuation;
 };
 
-// Fill Datastructs ============
+// Fill Datastructs =============
+mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv){
+	// get edge vectors of the pixel triangle
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+
+	// solve the linear system
+	vec3 dp2perp = cross( N,dp2);
+	vec3 dp1perp = cross( dp1, N );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+	// construct a scale-invariant frame
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+
+vec3 perturbNormal( vec3 N, vec3 V, vec2 texcoord, vec3 normal_pixel ) {
+	normal_pixel = normal_pixel * 255./127. - 128./127.;
+	return normalize(v_TBN * normal_pixel);
+}
 
 sFragVects getVectsOfFragment(const in sFragData mat, const in vec3 light_pos) {
 	sFragVects vects;
@@ -146,8 +177,8 @@ sFragData getDataOfFragment(const in vec2 uv) {
 
 	vec2 normal_uv = uv / u_normal_anim_size;
 	vec4 N = texture( u_normal_tex, get_tiling_uv(uv, u_normal_anim_size));
-	//mat.normal = normalize((2.0 * N.rgb) - 1.0);
-	mat.normal = normalize(v_TBN * (N.rgb * vec3(2.0) - vec3(1.0) ));
+	mat.normal = normalize((2.0 * N.rgb) - 1.0);
+	mat.normal = normalize(perturbNormal(normalize(v_face_normal), normalize( - v_world_position), v_uv, N.rgb));
     mat.height = N.a;
 
 	//mat.emmisive =  de_gamma(texture( u_emmisive_tex, v_uv ).rgb) * u_emmisive_factor;
@@ -218,11 +249,11 @@ vec3 get_pbr_color(const in sFragData data, const in sFragVects vects) {
 vec3 get_IBL_contribution(const in sFragData data, const in sFragVects vects) {
     vec2 LUT_brdf = texture(u_brdf_LUT, vec2(vects.n_dot_v, data.roughness)).rg;
     vec3 fresnel_IBL = fresnel_schlick(vects.n_dot_v, data.f0, data.roughness);
-    vec3 specular_sample = linear_to_gamma(texture(u_enviorment_map, -vects.r, 5.0 * data.roughness).rgb);
+    vec3 specular_sample = linear_to_gamma(texture(u_enviorment_map, vects.r, 5.0 * data.roughness).rgb);
 
     vec3 specular_IBL = ((fresnel_IBL * LUT_brdf.x) + LUT_brdf.y) * specular_sample;
 
-	vec3 diffuse_IBL = data.albedo * linear_to_gamma(texture(u_enviorment_map, -vects.r, 8.0).rgb) * (1.0 - fresnel_IBL);
+	vec3 diffuse_IBL = data.albedo * linear_to_gamma(texture(u_enviorment_map, vects.r, 8.0).rgb) * (1.0 - fresnel_IBL);
 
 	//return vec3(0.0);
 	//return (specular) + diffuse;
@@ -275,7 +306,7 @@ void main() {
 	vec3 view = normalize(u_camera_pos - v_world_position);
 	mat3 inv_TBN = transpose(v_TBN);
     vec3 tangent_view = inv_TBN * view;
-	vec2 pom_uv = get_POM_coords(v_uv, tangent_view);
+	vec2 pom_uv = get_POM_coords(v_uv, vec3(v_tangent_view.x, -v_tangent_view.y, v_tangent_view.z));
 
     if (u_render_mode == 0.0) {
       sFragData frag_data = getDataOfFragment(pom_uv);
