@@ -19,11 +19,6 @@ window.App = {
 
         this.initUI();
 
-        setTimeout(()=>{
-
-            this.loadFile(this._loadRoom, "finalkitchen.room");
-
-        },1000)
     },
 
     initUI() {
