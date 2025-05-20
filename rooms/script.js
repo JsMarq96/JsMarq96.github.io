@@ -1,3 +1,5 @@
+import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
+// import {Stats} from './stats.module.js';
 
 function _processVector( vector )
 {
@@ -16,6 +18,12 @@ window.App = {
     init() {
 
         this.initUI();
+
+        setTimeout(()=>{
+
+            this.loadFile(this._loadRoom, "finalkitchen.room");
+
+        },1000)
     },
 
     initUI() {
@@ -55,6 +63,14 @@ window.App = {
         this.modal.hidden = true;
 
         document.body.appendChild( this.modal );
+
+        this.stats = new Stats();
+        this.stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild( this.stats.dom );
+
+        Module.Engine.onFrame = () => {
+            this.stats.update();
+        }
     },
 
     getExtension( filename ) {
