@@ -1,5 +1,5 @@
 //import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
-import {Stats} from './stats.module.js';
+import {Stats} from './stats.min.js';
 
 function _processVector( vector )
 {
