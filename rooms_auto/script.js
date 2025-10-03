@@ -1,5 +1,5 @@
-import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
-// import {Stats} from './stats.module.js';
+//import { LX } from 'https://cdn.skypack.dev/lexgui/build/lexgui.module.js';
+import {Stats} from './stats.module.js';
 
 function _processVector( vector )
 {
@@ -91,10 +91,10 @@ window.App = {
             if( file.constructor == String )
             {
                 const path = file;
-                LX.requestBinary( path, ( data ) => loader.call(this, path, data ), ( e ) => {
-                    LX.popup( e.constructor === String ? e :  `[${ path }] can't be loaded.`, "Request Blocked", { size: ["400px", "auto"], timeout: 10000 } );
-                    this.toggleModal( false );
-                } );
+                // LX.requestBinary( path, ( data ) => loader.call(this, path, data ), ( e ) => {
+                //     LX.popup( e.constructor === String ? e :  `[${ path }] can't be loaded.`, "Request Blocked", { size: ["400px", "auto"], timeout: 10000 } );
+                //     this.toggleModal( false );
+                // } );
                 return;
             }
 
