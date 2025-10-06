@@ -21,7 +21,7 @@ window.App = {
 
         setTimeout(()=>{
 
-            this.loadFile(this._loadRoom, "finalkitchen.room");
+            this.loadFile(this._loadRoom, "egg.room");
 
         },10000)
     },
