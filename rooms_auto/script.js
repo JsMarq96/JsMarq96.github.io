@@ -147,6 +147,8 @@ window.App = {
 
     window.engineInstance.loadRoom(name);
 
+    this.stats.reset();
+
     this.toggleModal(false);
   },
 
