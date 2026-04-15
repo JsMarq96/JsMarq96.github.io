@@ -17,7 +17,7 @@ window.App = {
     setTimeout(() => {
       console.log("TEST");
       this.stats.reset();
-    }, 30000);
+    }, 40000);
   },
 
   initUI() {
