@@ -1,4 +1,4 @@
-import { LX } from "https://cdn.skypack.dev/lexgui/build/lexgui.module.js";
+import { LX } from "https://cdn.jsdelivr.net/npm/lexgui@8.3.0/build/lexgui.module.js";
 import { Stats } from "./stats.min.js";
 
 function _processVector(vector) {
@@ -15,8 +15,9 @@ window.App = {
     this.initUI();
 
     setTimeout(() => {
-      this.loadFile(this._loadRoom, "scene_unnamedtest.room");
-    }, 1000);
+      console.log("TEST");
+      this.stats.reset();
+    }, 10000);
   },
 
   initUI() {

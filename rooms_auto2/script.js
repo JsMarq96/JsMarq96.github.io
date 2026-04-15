@@ -1,4 +1,4 @@
-import { LX } from "https://cdn.skypack.dev/lexgui/build/lexgui.module.js";
+import { LX } from "https://cdn.jsdelivr.net/npm/lexgui@8.3.0";
 import { Stats } from "./stats.min.js";
 
 function _processVector(vector) {
@@ -8,15 +8,12 @@ function _processVector(vector) {
   return array;
 }
 
+var i = 0;
 window.App = {
   dragSupportedExtensions: [/*'glb', 'ply',*/ "room"],
 
   init() {
     this.initUI();
-
-    setTimeout(() => {
-      this.loadFile(this._loadRoom, "finalkitchen.room");
-    }, 5000);
   },
 
   initUI() {
@@ -65,8 +62,18 @@ window.App = {
     this.stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
     document.body.appendChild(this.stats.dom);
 
+    // setTimeout(() => {
+    //   console.log(this.stats, "TESTTESTEST");
+    //   window.App.stats.reset();
+    // }, 3000);
+
     Module.Engine.onFrame = () => {
       this.stats.update();
+
+      if (i++ == 1000) {
+        console.log("TEST");
+        this.stats.reset();
+      }
     };
   },
 
